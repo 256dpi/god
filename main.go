@@ -6,9 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 var mem = flag.Bool("mem", false, "memory profile")
+var trace = flag.Bool("trace", false, "trace profile")
+var duration = flag.Int("duration", 5, "trace duration")
 
 func main() {
 	// parse flags
@@ -29,6 +32,9 @@ func main() {
 	if *mem {
 		fmt.Printf("mem: %d\n", port)
 		profileMemory(port)
+	} else if *trace {
+		fmt.Printf("trace: %d\n", port)
+		profileTrace(port)
 	} else {
 		fmt.Printf("cpu: %d\n", port)
 		profileCPU(port)
@@ -45,6 +51,12 @@ func profileMemory(port int) {
 	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/heap", port)
 	run("go", "tool", "pprof", "-pdf", "-output", "mem.pdf", loc)
 	run("open", "mem.pdf")
+}
+
+func profileTrace(port int) {
+	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/trace?seconds=%d", port, *duration)
+	run("wget", "-O", "trace.out", loc)
+	run("go", "tool", "trace", "trace.out")
 }
 
 func run(bin string, args ...string) {
@@ -64,6 +76,8 @@ func run(bin string, args ...string) {
 
 	// inherit current environment
 	cmd.Env = os.Environ()
+
+	fmt.Printf("=> %s %s\n", bin, strings.Join(args, " "))
 
 	// run command
 	err = cmd.Run()
