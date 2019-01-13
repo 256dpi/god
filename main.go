@@ -10,6 +10,7 @@ import (
 )
 
 var mem = flag.Bool("mem", false, "memory profile")
+var memAll = flag.Bool("mem-all", false, "full memory profile")
 var trace = flag.Bool("trace", false, "trace profile")
 var duration = flag.Int("duration", 5, "trace duration")
 
@@ -32,6 +33,9 @@ func main() {
 	if *mem {
 		fmt.Printf("mem: %d\n", port)
 		profileMemory(port)
+	} else if *memAll {
+		fmt.Printf("mem-all: %d\n", port)
+		profileMemoryAll(port)
 	} else if *trace {
 		fmt.Printf("trace: %d\n", port)
 		profileTrace(port)
@@ -50,6 +54,12 @@ func profileCPU(port int) {
 func profileMemory(port int) {
 	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/heap", port)
 	run("go", "tool", "pprof", "-pdf", "-output", "mem.pdf", loc)
+	run("open", "mem.pdf")
+}
+
+func profileMemoryAll(port int) {
+	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/heap", port)
+	run("go", "tool", "pprof", "--alloc_space", "-pdf", "-output", "mem.pdf", loc)
 	run("open", "mem.pdf")
 }
 
