@@ -11,7 +11,9 @@ import (
 
 var mem = flag.Bool("mem", false, "memory profile")
 var trace = flag.Bool("trace", false, "trace profile")
-var duration = flag.Int("duration", 1, "trace duration")
+var mutex = flag.Bool("mutex", false, "mutex profile")
+var block = flag.Bool("block", false, "block profile")
+var duration = flag.Int("duration", 5, "trace duration")
 
 func main() {
 	// parse flags
@@ -35,6 +37,12 @@ func main() {
 	} else if *trace {
 		fmt.Printf("trace: %d\n", port)
 		profileTrace(port)
+	} else if *mutex {
+		fmt.Printf("mutex: %d\n", port)
+		profileMutex(port)
+	} else if *block {
+		fmt.Printf("block: %d\n", port)
+		profileBlock(port)
 	} else {
 		fmt.Printf("cpu: %d\n", port)
 		profileCPU(port)
@@ -57,6 +65,18 @@ func profileTrace(port int) {
 	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/trace?seconds=%d", port, *duration)
 	run("wget", "-O", "trace.out", loc)
 	run("go", "tool", "trace", "trace.out")
+}
+
+func profileMutex(port int) {
+	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/mutex", port)
+	run("wget", "-O", "mutex.out", loc)
+	run("go", "tool", "pprof", "-http=:3790", "mutex.out")
+}
+
+func profileBlock(port int) {
+	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/block", port)
+	run("wget", "-O", "block.out", loc)
+	run("go", "tool", "pprof", "-http=:3791", "block.out")
 }
 
 func run(bin string, args ...string) {
