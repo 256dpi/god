@@ -26,7 +26,7 @@ func main() {
 	port := 6060
 	if arg != "" {
 		if n, err := strconv.Atoi(arg); err == nil {
-			port += n
+			port = n
 		}
 	}
 
