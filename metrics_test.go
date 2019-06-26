@@ -15,10 +15,10 @@ func ExampleMetrics() {
 	timer.Add(time.Millisecond)
 	timer.Add(time.Second)
 
-	Track("track", []byte{0, 1})
+	Track("track", func() float64 { return 2 })
 
 	time.Sleep(1500 * time.Millisecond)
 
 	// Output:
-	// counter: 3.00 c/s ｜ timer: 1ms - 500.5ms - 1s ｜ track: 2
+	// counter: 3.00 c/s ｜ timer: 1ms - 500.5ms - 1s ｜ track: 2.00
 }
