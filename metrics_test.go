@@ -7,7 +7,7 @@ import (
 func ExampleMetrics() {
 	Metrics()
 
-	counter := NewCounter("counter")
+	counter := NewCounter("counter", nil)
 	counter.Add(1)
 	counter.Add(2)
 
@@ -15,10 +15,10 @@ func ExampleMetrics() {
 	timer.Add(time.Millisecond)
 	timer.Add(time.Second)
 
-	Track("track", func() float64 { return 2 })
+	TrackFloat("track", func() float64 { return 2 })
 
 	time.Sleep(1500 * time.Millisecond)
 
 	// Output:
-	// counter: 3.00 c/s ｜ timer: 1ms - 500.5ms - 1s ｜ track: 2.00
+	// counter: 3 c/s ｜ timer: 1ms - 500.5ms - 1s ｜ track: 2.00
 }

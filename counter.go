@@ -8,13 +8,27 @@ import (
 // Counter is a simple operations counter.
 type Counter struct {
 	total int
+	fmt   func(int) string
 	mutex sync.Mutex
 }
 
 // NewCounter will create and return a counter.
-func NewCounter(name string) *Counter {
-	c := &Counter{}
+func NewCounter(name string, formatter func(total int) string) *Counter {
+	// set default formatter
+	if formatter == nil {
+		formatter = func(total int) string {
+			return fmt.Sprintf("%d c/s", total)
+		}
+	}
+
+	// create counter
+	c := &Counter{
+		fmt: formatter,
+	}
+
+	// add counter
 	add(name, c)
+
 	return c
 }
 
@@ -31,7 +45,7 @@ func (c *Counter) string() string {
 	total := c.total
 	c.mutex.Unlock()
 
-	return fmt.Sprintf("%.2f c/s", float64(total))
+	return c.fmt(total)
 }
 
 func (c *Counter) reset() {
