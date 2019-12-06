@@ -2,14 +2,13 @@ package god
 
 import (
 	"fmt"
-	"sync"
+	"sync/atomic"
 )
 
 // Counter is a simple operations counter.
 type Counter struct {
-	total int
+	total int64
 	fmt   func(int) string
-	mutex sync.Mutex
 }
 
 // NewCounter will create and return a counter.
@@ -34,22 +33,13 @@ func NewCounter(name string, formatter func(total int) string) *Counter {
 
 // Add will increment the counter.
 func (c *Counter) Add(n int) {
-	c.mutex.Lock()
-	c.total += n
-	c.mutex.Unlock()
+	atomic.AddInt64(&c.total, int64(n))
 }
 
 func (c *Counter) string() string {
-	// get value
-	c.mutex.Lock()
-	total := c.total
-	c.mutex.Unlock()
-
-	return c.fmt(total)
+	return c.fmt(int(atomic.LoadInt64(&c.total)))
 }
 
 func (c *Counter) reset() {
-	c.mutex.Lock()
-	c.total = 0
-	c.mutex.Unlock()
+	atomic.StoreInt64(&c.total, 0)
 }
