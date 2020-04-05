@@ -22,18 +22,5 @@ Use the `god` utility to interact with the endpoint:
 god -duration 10
 ```
 
-The tool will fetch the CPU profile by default but can also fetch other profiles:
-
-```
-Usage of god:
-  -block
-    	block profile
-  -duration int
-    	trace duration (default 5)
-  -mem
-    	memory profile
-  -mutex
-    	mutex profile
-  -trace
-    	trace profile
-```
+The tool will fetch all available profiles, run the pprof servers and open a
+custom frontend from which all profiles can be accessed.
