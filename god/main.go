@@ -3,83 +3,139 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
+	"os/signal"
 	"strings"
+	"syscall"
+
+	"github.com/pkg/browser"
 )
 
-var mem = flag.Bool("mem", false, "memory profile")
-var trace = flag.Bool("trace", false, "trace profile")
-var mutex = flag.Bool("mutex", false, "mutex profile")
-var block = flag.Bool("block", false, "block profile")
-var duration = flag.Int("duration", 5, "trace duration")
+var duration = flag.Int("duration", 2, "trace duration")
 
 func main() {
 	// parse flags
 	flag.Parse()
 
-	// get args
-	arg := flag.Arg(0)
-
-	// prepare port
-	port := 6060
-	if arg != "" {
-		if n, err := strconv.Atoi(arg); err == nil {
-			port = n
-		}
+	// get port
+	port := flag.Arg(0)
+	if port == "" {
+		port = "6060"
 	}
 
-	// profile
-	if *mem {
-		fmt.Printf("mem: %d\n", port)
-		profileMemory(port)
-	} else if *trace {
-		fmt.Printf("trace: %d\n", port)
-		profileTrace(port)
-	} else if *mutex {
-		fmt.Printf("mutex: %d\n", port)
-		profileMutex(port)
-	} else if *block {
-		fmt.Printf("block: %d\n", port)
-		profileBlock(port)
-	} else {
-		fmt.Printf("cpu: %d\n", port)
-		profileCPU(port)
+	// prepare files
+	fmt.Println("==> creating temp files...")
+	cpu := tempFile("cpu")
+	mem := tempFile("mem")
+	block := tempFile("block")
+	mutex := tempFile("mutex")
+	trace := tempFile("trace")
+
+	// ensure cleanups
+	defer cleanup(cpu)
+	defer cleanup(mem)
+	defer cleanup(block)
+	defer cleanup(mutex)
+	defer cleanup(trace)
+
+	// download profiles
+	fmt.Println("==> downloading profiles...")
+	download(cpu, fmt.Sprintf("http://localhost:%s/debug/pprof/profile?seconds=%d", port, *duration))
+	download(mem, fmt.Sprintf("http://localhost:%s/debug/pprof/heap", port))
+	download(block, fmt.Sprintf("http://localhost:%s/debug/pprof/block", port))
+	download(mutex, fmt.Sprintf("http://localhost:%s/debug/pprof/mutex", port))
+	download(trace, fmt.Sprintf("http://localhost:%s/debug/pprof/trace?seconds=%d", port, *duration))
+
+	// make sure trace command does not open a browser
+	_ = os.Setenv("BROWSER", "/bin/echo")
+
+	// run servers
+	fmt.Println("==> running servers...")
+	kill1 := run("go", "tool", "pprof", "-http=0.0.0.0:3790", "-no_browser", cpu.Name())
+	kill2 := run("go", "tool", "pprof", "-http=0.0.0.0:3791", "-no_browser", mem.Name())
+	kill5 := run("go", "tool", "pprof", "-http=0.0.0.0:3792", "-no_browser", block.Name())
+	kill4 := run("go", "tool", "pprof", "-http=0.0.0.0:3793", "-no_browser", mutex.Name())
+	kill3 := run("go", "tool", "trace", "-http=0.0.0.0:3794", trace.Name())
+
+	// ensure kills
+	defer kill1()
+	defer kill2()
+	defer kill3()
+	defer kill4()
+	defer kill5()
+
+	// add handler
+	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(index(port)))
+	}))
+
+	// run server
+	go func() {
+		_ = http.ListenAndServe("0.0.0.0:3795", nil)
+	}()
+
+	// run browser
+	err := browser.OpenURL("http://0.0.0.0:3795")
+	if err != nil {
+		panic(err)
+	}
+
+	// prepare exit
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
+	<-exit
+
+	// just exit
+	os.Exit(0)
+}
+
+func tempFile(name string) *os.File {
+	// create temp file
+	f, err := ioutil.TempFile("", name)
+	if err != nil {
+		panic(err)
+	}
+
+	// print file
+	fmt.Println(f.Name())
+
+	return f
+}
+
+func cleanup(f *os.File) {
+	err := os.Remove(f.Name())
+	if err != nil {
+		panic(err)
 	}
 }
 
-func profileCPU(port int) {
-	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/profile?seconds=%d", port, *duration)
-	run("wget", "-O", "cpu.out", loc)
-	run("go", "tool", "pprof", "-http=:3788", "cpu.out")
+func download(f *os.File, url string) {
+	// print url
+	fmt.Println(url)
+
+	// download profile
+	res, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+
+	// ensure close
+	defer func() {
+		_ = res.Body.Close()
+	}()
+
+	// copy data
+	_, err = io.Copy(f, res.Body)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func profileMemory(port int) {
-	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/heap", port)
-	run("wget", "-O", "mem.out", loc)
-	run("go", "tool", "pprof", "-http=:3789", "mem.out")
-}
-
-func profileTrace(port int) {
-	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/trace?seconds=%d", port, *duration)
-	run("wget", "-O", "trace.out", loc)
-	run("go", "tool", "trace", "trace.out")
-}
-
-func profileMutex(port int) {
-	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/mutex", port)
-	run("wget", "-O", "mutex.out", loc)
-	run("go", "tool", "pprof", "-http=:3790", "mutex.out")
-}
-
-func profileBlock(port int) {
-	loc := fmt.Sprintf("http://localhost:%d/debug/pprof/block", port)
-	run("wget", "-O", "block.out", loc)
-	run("go", "tool", "pprof", "-http=:3791", "block.out")
-}
-
-func run(bin string, args ...string) {
+func run(bin string, args ...string) func() {
 	// create command
 	cmd := exec.Command(bin, args...)
 
@@ -97,11 +153,15 @@ func run(bin string, args ...string) {
 	// inherit current environment
 	cmd.Env = os.Environ()
 
-	fmt.Printf("=> %s %s\n", bin, strings.Join(args, " "))
+	fmt.Printf("%s %s\n", bin, strings.Join(args, " "))
 
 	// run command
-	err = cmd.Run()
+	err = cmd.Start()
 	if err != nil {
 		panic(err)
+	}
+
+	return func() {
+		_ = cmd.Process.Kill()
 	}
 }
