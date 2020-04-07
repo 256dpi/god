@@ -10,13 +10,11 @@ import (
 )
 
 // Debug will run a god compatible debug endpoint.
-func Debug(alternativePort ...int) {
-	// prepare port
-	port := 6060
-
-	// check alternative port
-	if len(alternativePort) > 0 {
-		port = alternativePort[0]
+func Debug(port ...int) {
+	// get address
+	addr := "0.0.0.0:6060"
+	if len(port) > 0 {
+		addr = "0.0.0.0:" + strconv.Itoa(port[0])
 	}
 
 	// enable mutex profiling
@@ -47,7 +45,7 @@ func Debug(alternativePort ...int) {
 		})
 
 		// launch debug server
-		err := http.ListenAndServe("0.0.0.0:"+strconv.Itoa(port), mux)
+		err := http.ListenAndServe(addr, mux)
 		if err != nil {
 			println(err.Error())
 		}
