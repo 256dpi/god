@@ -38,7 +38,7 @@ func Metrics() {
 				}
 
 				// print
-				fmt.Println(strings.Join(s, " ｜ "))
+				fmt.Println(strings.Join(s, " - "))
 			}
 		}
 	}()

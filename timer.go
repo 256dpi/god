@@ -79,5 +79,5 @@ func (t *Timer) Collect() string {
 	// unlock mutex
 	t.mutex.Unlock()
 
-	return fmt.Sprintf("%s - %s - %s", min.String(), mean.String(), max.String())
+	return fmt.Sprintf("%s/%s/%s", min.String(), mean.String(), max.String())
 }

@@ -13,6 +13,13 @@ func Track(name string, fn func() string) {
 	})
 }
 
+// TrackInt will track an integer over time.
+func TrackInt(name string, fn func() int64) {
+	Track(name, func() string {
+		return fmt.Sprintf("%d", fn())
+	})
+}
+
 // TrackFloat will track a float over time.
 func TrackFloat(name string, fn func() float64) {
 	Track(name, func() string {
