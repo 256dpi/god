@@ -29,15 +29,17 @@ func main() {
 
 	// prepare files
 	fmt.Println("==> creating temp files...")
+	mem := tempFile("heap")
+	allocs := tempFile("allocs")
 	cpu := tempFile("cpu")
-	mem := tempFile("mem")
 	block := tempFile("block")
 	mutex := tempFile("mutex")
 	trace := tempFile("trace")
 
 	// ensure cleanups
-	defer cleanup(cpu)
 	defer cleanup(mem)
+	defer cleanup(allocs)
+	defer cleanup(cpu)
 	defer cleanup(block)
 	defer cleanup(mutex)
 	defer cleanup(trace)
@@ -45,6 +47,7 @@ func main() {
 	// download profiles
 	fmt.Println("==> downloading profiles...")
 	download(mem, fmt.Sprintf("http://localhost:%s/debug/pprof/heap", port))
+	download(allocs, fmt.Sprintf("http://localhost:%s/debug/pprof/allocs", port))
 	download(cpu, fmt.Sprintf("http://localhost:%s/debug/pprof/profile?seconds=%d", port, *duration))
 	download(block, fmt.Sprintf("http://localhost:%s/debug/pprof/block?seconds=%d", port, *duration))
 	download(mutex, fmt.Sprintf("http://localhost:%s/debug/pprof/mutex?seconds=%d", port, *duration))
@@ -57,9 +60,10 @@ func main() {
 	fmt.Println("==> running servers...")
 	kill1 := run("go", "tool", "pprof", "-http=0.0.0.0:3790", "-no_browser", cpu.Name())
 	kill2 := run("go", "tool", "pprof", "-http=0.0.0.0:3791", "-no_browser", mem.Name())
-	kill5 := run("go", "tool", "pprof", "-http=0.0.0.0:3792", "-no_browser", block.Name())
-	kill4 := run("go", "tool", "pprof", "-http=0.0.0.0:3793", "-no_browser", mutex.Name())
-	kill3 := run("go", "tool", "trace", "-http=0.0.0.0:3794", trace.Name())
+	kill3 := run("go", "tool", "pprof", "-http=0.0.0.0:3792", "-no_browser", allocs.Name())
+	kill4 := run("go", "tool", "pprof", "-http=0.0.0.0:3793", "-no_browser", block.Name())
+	kill5 := run("go", "tool", "pprof", "-http=0.0.0.0:3794", "-no_browser", mutex.Name())
+	kill6 := run("go", "tool", "trace", "-http=0.0.0.0:3796", trace.Name())
 
 	// ensure kills
 	defer kill1()
@@ -67,6 +71,7 @@ func main() {
 	defer kill3()
 	defer kill4()
 	defer kill5()
+	defer kill6()
 
 	// add handler
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
