@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Options define the available debugging options.
@@ -32,6 +30,9 @@ type Options struct {
 	//
 	// Default: "OK" writer.
 	StatusHandler http.HandlerFunc
+
+	// Custom handler for the metrics endpoint.
+	MetricsHandler http.HandlerFunc
 }
 
 // Init will run a god compatible debug endpoint.
@@ -66,7 +67,9 @@ func Init(opts Options) {
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 		// add prometheus endpoint
-		mux.Handle("/metrics", promhttp.Handler())
+		if opts.MetricsHandler != nil {
+			mux.Handle("/metrics", opts.MetricsHandler)
+		}
 
 		// add status endpoint
 		mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
