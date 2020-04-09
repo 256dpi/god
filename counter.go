@@ -26,7 +26,7 @@ func NewCounter(name string, formatter func(total int) string) *Counter {
 	}
 
 	// add counter
-	add(name, c)
+	Register(name, c)
 
 	return c
 }
@@ -36,10 +36,9 @@ func (c *Counter) Add(n int) {
 	atomic.AddInt64(&c.total, int64(n))
 }
 
-func (c *Counter) string() string {
-	return c.fmt(int(atomic.LoadInt64(&c.total)))
-}
-
-func (c *Counter) reset() {
+// Collect implements the Metric interface.
+func (c *Counter) Collect() string {
+	str := c.fmt(int(atomic.LoadInt64(&c.total)))
 	atomic.StoreInt64(&c.total, 0)
+	return str
 }

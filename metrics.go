@@ -7,55 +7,53 @@ import (
 	"time"
 )
 
-type collector interface {
-	string() string
-	reset()
+// Metric represents a periodically collected metric.
+type Metric interface {
+	// Collect is called every second to retrieve the current value.
+	Collect() string
 }
 
 type metric struct {
-	name      string
-	collector collector
+	name   string
+	metric Metric
 }
 
 var metrics []metric
 
 // Metrics will enable the collection and printing of debug metrics.
 func Metrics() {
-	// create ticker
-	ticker := time.Tick(time.Second)
-
-	// run goroutine that calls print every second
+	// run printer
 	go func() {
+		// create ticker
+		ticker := time.Tick(time.Second)
+
+		// print metrics
 		for {
 			select {
 			case <-ticker:
-				printMetrics()
+				// collect strings
+				s := make([]string, 0, len(metrics))
+				for _, m := range metrics {
+					s = append(s, fmt.Sprintf("%s: %s", m.name, m.metric.Collect()))
+				}
+
+				// print
+				fmt.Println(strings.Join(s, " ｜ "))
 			}
 		}
 	}()
 }
 
-func add(name string, collector collector) {
+// Register will register the provided metric.
+func Register(name string, m Metric) {
 	// add metric
 	metrics = append(metrics, metric{
-		name:      name,
-		collector: collector,
+		name:   name,
+		metric: m,
 	})
 
 	// sort by name
 	sort.Slice(metrics, func(i, j int) bool {
 		return metrics[i].name < metrics[j].name
 	})
-}
-
-func printMetrics() {
-	// collect strings
-	s := make([]string, 0, len(metrics))
-	for _, m := range metrics {
-		s = append(s, fmt.Sprintf("%s: %s", m.name, m.collector.string()))
-		m.collector.reset()
-	}
-
-	// print
-	fmt.Println(strings.Join(s, " ｜ "))
 }

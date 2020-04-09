@@ -15,7 +15,7 @@ type Timer struct {
 // NewTimer will create and return a timer.
 func NewTimer(name string) *Timer {
 	t := &Timer{}
-	add(name, t)
+	Register(name, t)
 	return t
 }
 
@@ -34,7 +34,8 @@ func (t *Timer) Measure() func() {
 	}
 }
 
-func (t *Timer) string() string {
+// Collect implements the Metric interface.
+func (t *Timer) Collect() string {
 	// lock mutex
 	t.mutex.Lock()
 
@@ -72,14 +73,11 @@ func (t *Timer) string() string {
 		mean = sum / time.Duration(len(t.list))
 	}
 
+	// reset list
+	t.list = nil
+
 	// unlock mutex
 	t.mutex.Unlock()
 
 	return fmt.Sprintf("%s - %s - %s", min.String(), mean.String(), max.String())
-}
-
-func (t *Timer) reset() {
-	t.mutex.Lock()
-	t.list = nil
-	t.mutex.Unlock()
 }

@@ -8,7 +8,7 @@ type tracker struct {
 
 // Track will track a string over time.
 func Track(name string, fn func() string) {
-	add(name, &tracker{
+	Register(name, &tracker{
 		fn: fn,
 	})
 }
@@ -20,8 +20,7 @@ func TrackFloat(name string, fn func() float64) {
 	})
 }
 
-func (c *tracker) string() string {
+// Collect implements the Metric interface.
+func (c *tracker) Collect() string {
 	return c.fn()
 }
-
-func (c *tracker) reset() {}
