@@ -6,7 +6,7 @@ import (
 
 func ExampleMetrics() {
 	// enable
-	Metrics()
+	Init(Options{})
 
 	// counter
 	counter := NewCounter("counter", nil)

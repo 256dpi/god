@@ -28,7 +28,7 @@ type Options struct {
 	// Default: 1.
 	BlockProfileRate int
 
-	// A custom handler for the status endpoint.
+	// Custom handler for the status endpoint.
 	//
 	// Default: "OK" writer.
 	StatusHandler http.HandlerFunc
@@ -43,6 +43,9 @@ func Init(opts Options) {
 	if opts.BlockProfileRate == 0 {
 		opts.BlockProfileRate = 1
 	}
+
+	// print metrics
+	go printMetrics()
 
 	// get address
 	addr := "0.0.0.0:6060"
