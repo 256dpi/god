@@ -44,10 +44,10 @@ func main() {
 
 	// download profiles
 	fmt.Println("==> downloading profiles...")
-	download(cpu, fmt.Sprintf("http://localhost:%s/debug/pprof/profile?seconds=%d", port, *duration))
 	download(mem, fmt.Sprintf("http://localhost:%s/debug/pprof/heap", port))
-	download(block, fmt.Sprintf("http://localhost:%s/debug/pprof/block", port))
-	download(mutex, fmt.Sprintf("http://localhost:%s/debug/pprof/mutex", port))
+	download(cpu, fmt.Sprintf("http://localhost:%s/debug/pprof/profile?seconds=%d", port, *duration))
+	download(block, fmt.Sprintf("http://localhost:%s/debug/pprof/block?seconds=%d", port, *duration))
+	download(mutex, fmt.Sprintf("http://localhost:%s/debug/pprof/mutex?seconds=%d", port, *duration))
 	download(trace, fmt.Sprintf("http://localhost:%s/debug/pprof/trace?seconds=%d", port, *duration))
 
 	// make sure trace command does not open a browser
