@@ -18,6 +18,16 @@ type Options struct {
 	// Default: 6060.
 	Port int
 
+	// The mutex profile fraction.
+	//
+	// Default: 1.
+	MutexProfileFraction int
+
+	// The block profile rate.
+	//
+	// Default: 1.
+	BlockProfileRate int
+
 	// A custom handler for the status endpoint.
 	//
 	// Default: "OK" writer.
@@ -26,17 +36,19 @@ type Options struct {
 
 // Init will run a god compatible debug endpoint.
 func Init(opts Options) {
+	// set defaults
+	if opts.MutexProfileFraction == 0 {
+		opts.MutexProfileFraction = 1
+	}
+	if opts.BlockProfileRate == 0 {
+		opts.BlockProfileRate = 1
+	}
+
 	// get address
 	addr := "0.0.0.0:6060"
 	if opts.Port > 0 {
 		addr = "0.0.0.0:" + strconv.Itoa(opts.Port)
 	}
-
-	// enable mutex profiling
-	runtime.SetMutexProfileFraction(100)
-
-	// enable block profiling
-	runtime.SetBlockProfileRate(100)
 
 	// enable debugging
 	go func() {
@@ -44,7 +56,7 @@ func Init(opts Options) {
 		mux := http.NewServeMux()
 
 		// add pprof endpoints
-		mux.HandleFunc("/debug/pprof/", profile)
+		mux.HandleFunc("/debug/pprof/", profile(opts))
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
@@ -71,31 +83,33 @@ func Init(opts Options) {
 	}()
 }
 
-func profile(w http.ResponseWriter, r *http.Request) {
-	// get profile
-	seg := strings.Split(r.URL.Path, "/")
-	name := seg[len(seg)-1]
+func profile(opts Options) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// get profile
+		seg := strings.Split(r.URL.Path, "/")
+		name := seg[len(seg)-1]
 
-	// get seconds
-	sec, err := strconv.ParseInt(r.FormValue("seconds"), 10, 64)
-	if sec <= 0 || err != nil {
-		sec = 30
+		// get seconds
+		sec, err := strconv.ParseInt(r.FormValue("seconds"), 10, 64)
+		if sec <= 0 || err != nil {
+			sec = 30
+		}
+
+		// build temporary mutex profile
+		if name == "mutex" {
+			runtime.SetMutexProfileFraction(opts.MutexProfileFraction)
+			defer runtime.SetMutexProfileFraction(0)
+			time.Sleep(time.Duration(sec) * time.Second)
+		}
+
+		// build temporary block profile
+		if name == "block" {
+			runtime.SetBlockProfileRate(opts.BlockProfileRate)
+			defer runtime.SetBlockProfileRate(0)
+			time.Sleep(time.Duration(sec) * time.Second)
+		}
+
+		// call index
+		pprof.Index(w, r)
 	}
-
-	// build temporary mutex profile
-	if name == "mutex" {
-		runtime.SetMutexProfileFraction(1)
-		defer runtime.SetMutexProfileFraction(0)
-		time.Sleep(time.Duration(sec) * time.Second)
-	}
-
-	// build temporary block profile
-	if name == "block" {
-		runtime.SetBlockProfileRate(1)
-		defer runtime.SetBlockProfileRate(0)
-		time.Sleep(time.Duration(sec) * time.Second)
-	}
-
-	// call index
-	pprof.Index(w, r)
 }
