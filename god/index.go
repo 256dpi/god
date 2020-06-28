@@ -36,12 +36,12 @@ func index(port string) string {
 		</head>
 		<body>
 			<div>
-				<a href="http://0.0.0.0:3797/ui/flamegraph" target="frame">Full</a>
 				<a href="http://0.0.0.0:3790/ui/flamegraph" target="frame">CPU</a>
 				<a href="http://0.0.0.0:3791/ui/flamegraph" target="frame">Mem</a>
 				<a href="http://0.0.0.0:3792/ui/flamegraph" target="frame">Allocs</a>
 				<a href="http://0.0.0.0:3793/ui/flamegraph" target="frame">Block</a>
 				<a href="http://0.0.0.0:3794/ui/flamegraph" target="frame">Mutex</a>
+				<a href="http://0.0.0.0:3797/ui/flamegraph" target="frame">Full</a>
 				<a href="http://0.0.0.0:3796" target="frame">Trace</a>
 				<a href="http://0.0.0.0:` + port + `/metrics" target="frame">Metrics</a>
 			</div>
