@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/felixge/fgprof"
 )
 
 // Options define the available debugging options.
@@ -65,6 +67,9 @@ func Init(opts Options) {
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		// add fgprof endpoint
+		mux.Handle("/debug/fgprof", fgprof.Handler())
 
 		// add prometheus endpoint
 		if opts.MetricsHandler != nil {

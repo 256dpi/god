@@ -31,6 +31,7 @@ func main() {
 	fmt.Println("==> creating temp files...")
 	mem := tempFile("heap")
 	allocs := tempFile("allocs")
+	full := tempFile("full")
 	cpu := tempFile("cpu")
 	block := tempFile("block")
 	mutex := tempFile("mutex")
@@ -39,6 +40,7 @@ func main() {
 	// ensure cleanups
 	defer cleanup(mem)
 	defer cleanup(allocs)
+	defer cleanup(full)
 	defer cleanup(cpu)
 	defer cleanup(block)
 	defer cleanup(mutex)
@@ -48,6 +50,7 @@ func main() {
 	fmt.Println("==> downloading profiles...")
 	download(mem, fmt.Sprintf("http://localhost:%s/debug/pprof/heap", port))
 	download(allocs, fmt.Sprintf("http://localhost:%s/debug/pprof/allocs", port))
+	download(full, fmt.Sprintf("http://localhost:%s/debug/fgprof?seconds=%d", port, *duration))
 	download(cpu, fmt.Sprintf("http://localhost:%s/debug/pprof/profile?seconds=%d", port, *duration))
 	download(block, fmt.Sprintf("http://localhost:%s/debug/pprof/block?seconds=%d", port, *duration))
 	download(mutex, fmt.Sprintf("http://localhost:%s/debug/pprof/mutex?seconds=%d", port, *duration))
@@ -58,6 +61,7 @@ func main() {
 
 	// run servers
 	fmt.Println("==> running servers...")
+	kill0 := run("go", "tool", "pprof", "-http=0.0.0.0:3797", "-no_browser", full.Name())
 	kill1 := run("go", "tool", "pprof", "-http=0.0.0.0:3790", "-no_browser", cpu.Name())
 	kill2 := run("go", "tool", "pprof", "-http=0.0.0.0:3791", "-no_browser", mem.Name())
 	kill3 := run("go", "tool", "pprof", "-http=0.0.0.0:3792", "-no_browser", allocs.Name())
@@ -66,6 +70,7 @@ func main() {
 	kill6 := run("go", "tool", "trace", "-http=0.0.0.0:3796", trace.Name())
 
 	// ensure kills
+	defer kill0()
 	defer kill1()
 	defer kill2()
 	defer kill3()

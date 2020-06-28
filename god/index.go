@@ -36,6 +36,7 @@ func index(port string) string {
 		</head>
 		<body>
 			<div>
+				<a href="http://0.0.0.0:3797/ui/flamegraph" target="frame">Full</a>
 				<a href="http://0.0.0.0:3790/ui/flamegraph" target="frame">CPU</a>
 				<a href="http://0.0.0.0:3791/ui/flamegraph" target="frame">Mem</a>
 				<a href="http://0.0.0.0:3792/ui/flamegraph" target="frame">Allocs</a>
