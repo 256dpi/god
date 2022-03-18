@@ -11,8 +11,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-
-	"github.com/pkg/browser"
 )
 
 var duration = flag.Int("duration", 2, "trace duration")
@@ -89,7 +87,7 @@ func main() {
 	}()
 
 	// run browser
-	err := browser.OpenURL("http://0.0.0.0:3795")
+	err := exec.Command("open", "-a", "Google Chrome", "http://0.0.0.0:3795").Run()
 	if err != nil {
 		panic(err)
 	}
