@@ -18,6 +18,11 @@ type Options struct {
 	// Default: 6060.
 	Port int
 
+	// The memory profile rate.
+	//
+	// Default: 1024.
+	MemoryProfileRate int
+
 	// The mutex profile fraction.
 	//
 	// Default: 1.
@@ -40,12 +45,18 @@ type Options struct {
 // Init will run a god compatible debug endpoint.
 func Init(opts Options) {
 	// set defaults
+	if opts.MemoryProfileRate == 0 {
+		opts.MemoryProfileRate = 1024
+	}
 	if opts.MutexProfileFraction == 0 {
 		opts.MutexProfileFraction = 1
 	}
 	if opts.BlockProfileRate == 0 {
 		opts.BlockProfileRate = 1
 	}
+
+	// set memory profile rate
+	runtime.MemProfileRate = opts.MemoryProfileRate
 
 	// print metrics
 	go printMetrics()
