@@ -34,10 +34,21 @@ func main() {
 	// trace
 	go func() {
 		for {
+			time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 			func() {
 				e := god.Trace("foo", "bar")
 				defer e.End()
 				time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+			}()
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(time.Duration(rand.Intn(1500)) * time.Millisecond)
+			func() {
+				e := god.Trace("foo", "baz")
+				defer e.End()
+				time.Sleep(time.Duration(rand.Intn(1500)) * time.Millisecond)
 			}()
 		}
 	}()
