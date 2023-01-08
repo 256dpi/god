@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// TraceBuffer is the trace buffer size per receiver.
+var TraceBuffer = 256
+
 var traceReceivers = map[chan Event]struct{}{}
 var traceMutex sync.Mutex
 
@@ -45,7 +48,7 @@ func Trace(name, task string) Event {
 
 func traceHandler(w http.ResponseWriter, r *http.Request) {
 	// create channel
-	ch := make(chan Event, 32)
+	ch := make(chan Event, TraceBuffer)
 
 	// add receiver
 	traceMutex.Lock()
