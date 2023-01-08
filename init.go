@@ -97,6 +97,9 @@ func Init(opts Options) {
 			}
 		})
 
+		// add trace endpoint
+		mux.HandleFunc("/trace", traceHandler)
+
 		// launch debug server
 		err := http.ListenAndServe(addr, mux)
 		if err != nil {
