@@ -1,6 +1,7 @@
 package god
 
 import (
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"runtime"
@@ -13,6 +14,11 @@ import (
 
 // Options define the available debugging options.
 type Options struct {
+	// The host to run the debug interface on.
+	//
+	// Default: "0.0.0.0".
+	Host string
+
 	// The port to run the debug interface on.
 	//
 	// Default: 6060.
@@ -62,10 +68,15 @@ func Init(opts Options) {
 	go printMetrics()
 
 	// get address
-	addr := "0.0.0.0:6060"
-	if opts.Port > 0 {
-		addr = "0.0.0.0:" + strconv.Itoa(opts.Port)
+	host := "0.0.0.0"
+	if opts.Host != "" {
+		host = opts.Host
 	}
+	port := 6060
+	if opts.Port > 0 {
+		port = opts.Port
+	}
+	addr := net.JoinHostPort(host, strconv.Itoa(port))
 
 	// enable debugging
 	go func() {
