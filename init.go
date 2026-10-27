@@ -72,8 +72,8 @@ func Init(opts Options) {
 		runtime.MemProfileRate = opts.MemoryProfileRate
 	}
 
-	// print metrics
-	go printMetrics()
+	// print metrics once registered
+	enableMetrics()
 
 	// start flight recorder
 	var flight http.HandlerFunc
