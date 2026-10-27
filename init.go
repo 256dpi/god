@@ -133,8 +133,14 @@ func Init(opts Options) {
 		// add trace endpoint
 		mux.HandleFunc("/trace", traceHandler)
 
-		// launch debug server
-		err := http.ListenAndServe(addr, mux)
+		// launch debug server, without write timeout as profiles and traces
+		// are streamed for as long as requested
+		server := &http.Server{
+			Addr:              addr,
+			Handler:           mux,
+			ReadHeaderTimeout: 10 * time.Second,
+		}
+		err := server.ListenAndServe()
 		if err != nil {
 			println(err.Error())
 		}
