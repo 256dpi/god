@@ -8,11 +8,13 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
 
 var duration = flag.Int("duration", 2, "trace duration")
+var pgo = flag.String("pgo", "", "write a cpu profile to this file for pgo, merged with the one there")
 
 func main() {
 	// parse flags
@@ -22,6 +24,12 @@ func main() {
 	port := flag.Arg(0)
 	if port == "" {
 		port = "6060"
+	}
+
+	// collect profile for pgo
+	if *pgo != "" {
+		collect(port, *pgo)
+		return
 	}
 
 	// prepare files
@@ -98,6 +106,49 @@ func main() {
 
 	// just exit
 	os.Exit(0)
+}
+
+func collect(port, file string) {
+	// download profile
+	fmt.Println("==> downloading profile...")
+	cpu := tempFile("cpu")
+	defer cleanup(cpu)
+	download(cpu, fmt.Sprintf("http://localhost:%s/debug/pprof/profile?seconds=%d", port, *duration))
+
+	// merge with existing profile
+	inputs := []string{cpu.Name()}
+	_, err := os.Stat(file)
+	if err == nil {
+		fmt.Println("==> merging with " + file + "...")
+		inputs = append([]string{file}, inputs...)
+	} else if !os.IsNotExist(err) {
+		panic(err)
+	}
+
+	// write profile next to the target and move it into place
+	out, err := os.CreateTemp(filepath.Dir(file), ".pgo")
+	if err != nil {
+		panic(err)
+	}
+	cmd := exec.Command("go", append([]string{"tool", "pprof", "-proto"}, inputs...)...)
+	cmd.Stdout = out
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err == nil {
+		err = out.Close()
+	}
+	if err == nil {
+		err = os.Chmod(out.Name(), 0644)
+	}
+	if err == nil {
+		err = os.Rename(out.Name(), file)
+	}
+	if err != nil {
+		_ = os.Remove(out.Name())
+		panic(err)
+	}
+
+	fmt.Println("==> wrote " + file)
 }
 
 func tempFile(name string) *os.File {
