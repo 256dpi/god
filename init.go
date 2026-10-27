@@ -24,9 +24,9 @@ type Options struct {
 	// Default: 6060.
 	Port int
 
-	// The memory profile rate.
+	// The memory profile rate, see runtime.MemProfileRate.
 	//
-	// Default: 1024.
+	// Default: Go's own, one sample per 512 KiB allocated.
 	MemoryProfileRate int
 
 	// The mutex profile fraction.
@@ -51,9 +51,6 @@ type Options struct {
 // Init will run a god compatible debug endpoint.
 func Init(opts Options) {
 	// set defaults
-	if opts.MemoryProfileRate == 0 {
-		opts.MemoryProfileRate = 1024
-	}
 	if opts.MutexProfileFraction == 0 {
 		opts.MutexProfileFraction = 1
 	}
@@ -62,7 +59,9 @@ func Init(opts Options) {
 	}
 
 	// set memory profile rate
-	runtime.MemProfileRate = opts.MemoryProfileRate
+	if opts.MemoryProfileRate > 0 {
+		runtime.MemProfileRate = opts.MemoryProfileRate
+	}
 
 	// print metrics
 	go printMetrics()
