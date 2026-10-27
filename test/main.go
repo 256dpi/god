@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"runtime/trace"
 	"sync"
 	"time"
 
@@ -10,7 +11,11 @@ import (
 
 func main() {
 	// init
-	god.Init(god.Options{})
+	god.Init(god.Options{
+		FlightRecorder: &trace.FlightRecorderConfig{
+			MinAge: 5 * time.Second,
+		},
+	})
 
 	// block events
 	go func() {

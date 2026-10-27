@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"runtime"
+	"runtime/trace"
 	"strconv"
 	"strings"
 	"time"
@@ -39,6 +40,14 @@ type Options struct {
 	// Default: 1.
 	BlockProfileRate int
 
+	// The flight recorder configuration. If set, an execution trace of the
+	// recent past is kept in memory and served as a snapshot at
+	// /debug/flight. Tracing continuously costs some CPU and the window's
+	// memory.
+	//
+	// Default: nil (disabled).
+	FlightRecorder *trace.FlightRecorderConfig
+
 	// Custom handler for the status endpoint.
 	//
 	// Default: "OK" writer.
@@ -66,6 +75,12 @@ func Init(opts Options) {
 	// print metrics
 	go printMetrics()
 
+	// start flight recorder
+	var flight http.HandlerFunc
+	if opts.FlightRecorder != nil {
+		flight = flightHandler(*opts.FlightRecorder)
+	}
+
 	// get address
 	host := "0.0.0.0"
 	if opts.Host != "" {
@@ -91,6 +106,11 @@ func Init(opts Options) {
 
 		// add fgprof endpoint
 		mux.Handle("/debug/fgprof", fgprof.Handler())
+
+		// add flight recorder endpoint
+		if flight != nil {
+			mux.HandleFunc("/debug/flight", flight)
+		}
 
 		// add prometheus endpoint
 		if opts.MetricsHandler != nil {
