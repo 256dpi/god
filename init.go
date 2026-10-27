@@ -112,6 +112,9 @@ func Init(opts Options) {
 			mux.HandleFunc("/debug/flight", flight)
 		}
 
+		// add runtime metrics endpoint
+		mux.HandleFunc("/debug/runtime", runtimeHandler)
+
 		// add prometheus endpoint
 		if opts.MetricsHandler != nil {
 			mux.Handle("/metrics", opts.MetricsHandler)

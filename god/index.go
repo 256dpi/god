@@ -44,6 +44,7 @@ func index(port string) string {
 				<a href="http://0.0.0.0:3797/ui/flamegraph" target="frame">Full</a>
 				<a href="http://0.0.0.0:3796" target="frame">Trace</a>
 				<a href="http://0.0.0.0:` + port + `/metrics" target="frame">Metrics</a>
+				<a href="http://0.0.0.0:` + port + `/debug/runtime" target="frame">Runtime</a>
 			</div>
 		
 			<iframe name="frame" src="http://0.0.0.0:3790/ui/flamegraph">
